@@ -1,0 +1,69 @@
+# simple makefile using guile for libs/linking
+#TODO: static-pie
+
+# sources
+C_FILES ::= $(wildcard *.c)
+OBJ_FILES ::= $(patsubst %.c, %.o, $(C_FILES))
+
+#2.2 3.0
+GUILE_VER ?= 2.2
+
+TARGET ?= eg-${GUILE_VER}
+
+# lib paths
+LIB_DIR ?= $$HOME/.guix-profile/lib
+LIB_DIR_LINK ::= ${LIB_DIR:%=-L %}
+PKG_CONFIG_PATH ?= ${LIB_DIR:%=%/pkgconfig}
+PKG_CONFIG_PATH_VAR ::= ${PKG_CONFIG_PATH:%=PKG_CONFIG_PATH=%}
+
+# builtins
+LDFLAGS ?= -pie
+CFLAGS ?= -fPIC -Wall `${PKG_CONFIG_PATH_VAR} pkg-config --static --cflags guile-${GUILE_VER}`
+LDLIBS ?= -pthread ${LIB_DIR_LINK} `${PKG_CONFIG_PATH_VAR} pkg-config --static --libs guile-${GUILE_VER}` -ldl
+
+# runtime
+RUN_ARGS ?= -v
+
+GUILE_LOAD_PATH ?= $$HOME/.guix-profile/share/guile/${GUILE_VER}
+GUILE_LOAD_PATH_VAR ::= ${GUILE_LOAD_PATH:%=GUILE_LOAD_PATH=%}
+
+GUILE_LOAD_COMPILED_PATH ?= $$HOME/.guix-profile/lib/guile/${GUILE_VER:%=%/ccache}
+GUILE_LOAD_COMPILED_PATH_VAR ::= ${GUILE_LOAD_COMPILED_PATH:%=GUILE_LOAD_COMPILED_PATH=%}
+
+LD_LIB_PATH ?= ${LIB_DIR}
+LD_LIBRARY_PATH_VAR ::= ${LD_LIB_PATH:%=LD_LIBRARY_PATH=%}
+
+LD_PRE ?= #${LIB_DIR:%=%/libguile-${GUILE_VER}.so.1}
+LD_PRELOAD_VAR ::= ${LD_PRE:%=LD_PRELOAD=%}
+
+LD_PATH ?= ${LIB_DIR:%=%/ld-linux-x86-64.so.2}
+LD_PATH_VAR ::= ${LD_PATH:%=%}
+
+.PHONY: all clean run test clean-test
+
+all: $(TARGET)
+
+$(TARGET): $(OBJ_FILES)
+	${CC} ${LDFLAGS} $< ${LDLIBS} -o $@
+
+clean:
+	rm -f ${TARGET} *.o
+
+run: all
+	${GUILE_LOAD_PATH_VAR} ${GUILE_LOAD_COMPILED_PATH_VAR} ${LD_LIBRARY_PATH_VAR} ${LD_PRELOAD_VAR} ${LD_PATH_VAR} ./${TARGET} ${RUN_ARGS}
+
+clean-test: clean
+	rm -f *.test
+
+# test all the targets/config flags supported
+test: Makefile.bak
+  # guile-3.0
+	TARGET=eg-3.0-shared.test GUILE_VER=3.0 LDFLAGS="-shared" make -f $< clean all
+	TARGET=eg-3.0-static.test GUILE_VER=3.0 LDFLAGS="-static" LD_PATH="" make -f $< clean all run # run static
+	TARGET=eg-3.0-dyn.test GUILE_VER=3.0 make -f $< clean all run # guix libs
+	TARGET=eg-3.0-dyn.test GUILE_VER=3.0 LD_PATH="" LD_LIB_PATH="" LD_PRE="${LIB_DIR:%=%/libguile-3.0.so.1}" make -f $< clean all run # system libs (missing lib so preload)
+  # guile-2.2
+	TARGET=eg-2.2-shared.test LDFLAGS="-shared" make -f $< clean all
+	TARGET=eg-2.2-static.test LDFLAGS="-static" LD_PATH="" make -f $< clean all run # run static
+	TARGET=eg-2.2-dyn.test make -f $< clean all run # guix libs
+	TARGET=eg-2.2-dyn.test LD_PATH="" LD_LIB_PATH="" LD_PRE="" make -f $< clean all run # system libs

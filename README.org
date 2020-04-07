@@ -1,0 +1,3 @@
+* Guile sample
+** Sample project with custom guile build for linking statically and dynamically
+*** Build guile with guix and example project with autotools: ~./example.sh~
