@@ -22,7 +22,7 @@ LT_INIT
 AC_PROG_CC
 
 # Check for Guile 3 or 2.2
-GUILE_PKG([3.0 2.2])
+GUILE_PKG([3.0])
 GUILE_FLAGS
 GUILE_SITE_DIR
 

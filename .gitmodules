@@ -1,0 +1,5 @@
+[submodule "guix-channel"]
+	path = guix-channel
+	url = https://github.com/jamartin9/guix-channel.git
+	shallow = true
+	update = merge

@@ -1,6 +1,6 @@
 # This is an automake file; process in automake
 ACLOCAL_AMFLAGS = -I m4 --install
-EXTRA_DIST = example.sh guile/ README.org Makefile.bak
+EXTRA_DIST = example.sh guix-channel/ src/hello.scm README.org Makefile.bak
 
 # .go and .scm files
 GUILECOMPILED = ${GUILE_SITE:%/share/guile/site/@GUILE_EFFECTIVE_VERSION@=%/lib/guile/@GUILE_EFFECTIVE_VERSION@/ccache}
@@ -8,7 +8,7 @@ GUILESOURCE = ${GUILE_SITE:%/site/@GUILE_EFFECTIVE_VERSION@=%/@GUILE_EFFECTIVE_V
 
 # exe
 pkglibexec_PROGRAMS = eg
-eg_SOURCES = src/simple-guile.c
+eg_SOURCES = src/simple-guile.c src/hello.scm.h
 eg_CFLAGS = ${GUILE_CFLAGS}
 eg_LDFLAGS = ${GUILE_LDFLAGS}
 if ENABLE_STATIC_PROG
@@ -49,3 +49,4 @@ LD_PATH ?= #"/usr/lib/ld-linux-x86-64.so.2"
 .PHONY: run
 run: eg
 	${GUILE_LOAD_PATH_VAR} ${GUILE_LOAD_COMPILED_PATH_VAR} ${LD_LIB_VAR} ${LD_PRE_VAR} ${LD_PATH} ./$< ${RUN_ARGS}
+#xxd -i hello.scm | sed 's/unsigned//g' | sed 's/\([0-9a-f]\)$/\0, 0x00/' > hello.scm.h
